@@ -1,0 +1,52 @@
+   <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     android:orientation="vertical"
+      android:padding="20dp">
+
+       <EditText
+        android:id="@+id/etName"
+        android:layout_width="338dp"
+        android:layout_height="98dp"
+        android:hint="Product Name"
+        />
+
+     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+     </LinearLayout>
+
+    <EditText
+        android:id="@+id/etBuying"
+        android:hint="Buying Price"
+        android:inputType="numberDecimal"
+        android:layout_width="338dp"
+        android:layout_height="98dp"/>
+
+    <EditText
+        android:id="@+id/etSelling"
+        android:hint="Selling Price"
+        android:inputType="numberDecimal"
+        android:layout_width="338dp"
+        android:layout_height="98dp"/>
+
+    <EditText
+        android:id="@+id/etStock"
+        android:hint="Stock"
+        android:inputType="number"
+        android:layout_width="338dp"
+        android:layout_height="98dp"/>
+
+    <Button
+        android:id="@+id/btnUpdate"
+        android:text="Update Product"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>
