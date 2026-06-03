@@ -11,15 +11,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.a10.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 public class LoginActivity extends AppCompatActivity {
 
     EditText etEmail, etPassword;
-
     Button btnLogin;
 
     FirebaseAuth auth;
-
     FirebaseFirestore db;
 
     @Override
@@ -28,9 +27,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         etEmail = findViewById(R.id.etEmail);
-
         etPassword = findViewById(R.id.etPassword);
-
         btnLogin = findViewById(R.id.btnLogin);
 
         auth = FirebaseAuth.getInstance();
@@ -46,73 +43,107 @@ public class LoginActivity extends AppCompatActivity {
 
         if (email.isEmpty() || password.isEmpty()) {
 
-            Toast.makeText(this,
+            Toast.makeText(
+                    this,
                     "Enter all fields",
-                    Toast.LENGTH_SHORT).show();
+                    Toast.LENGTH_SHORT
+            ).show();
+
             return;
         }
 
         auth.signInWithEmailAndPassword(email, password)
+
                 .addOnSuccessListener(authResult -> {
 
-                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    String uid = authResult.getUser().getUid();
 
-                    String uid = auth.getCurrentUser().getUid();
-
-                    // 🔥 FIND USER IN ALL BUSINESSES
                     db.collectionGroup("users")
                             .whereEqualTo("email", email)
                             .get()
-                            .addOnSuccessListener(snapshot -> {
 
-                                if (snapshot.isEmpty()) {
+                            .addOnSuccessListener(this::handleUserProfile)
 
-                                    Toast.makeText(this,
-                                            "User not found in system",
-                                            Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-
-                                for (com.google.firebase.firestore.DocumentSnapshot doc : snapshot.getDocuments()) {
-
-                                    String role = doc.getString("role");
-                                    String businessId = doc.getString("businessId");
-
-                                    // 💾 SAVE SESSION
-                                    getSharedPreferences("APP", MODE_PRIVATE)
-                                            .edit()
-                                            .putString("businessId", businessId)
-                                            .putString("role", role)
-                                            .apply();
-
-                                    // 🚀 ROUTE USER
-                                    if ("admin".equals(role)) {
-
-                                        startActivity(new Intent(
-                                                this,
-                                                AdminDashboardActivity.class
-                                        ));
-
-                                    } else {
-
-                                        startActivity(new Intent(
-                                                this,
-                                                DashboardActivity.class
-                                        ));
-                                    }
-
-                                    finish();
-                                    break;
-                                }
-                            });
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(
+                                            LoginActivity.this,
+                                            e.getMessage(),
+                                            Toast.LENGTH_LONG
+                                    ).show()
+                            );
 
                 })
+
                 .addOnFailureListener(e ->
-                        Toast.makeText(this,
+                        Toast.makeText(
+                                LoginActivity.this,
                                 e.getMessage(),
-                                Toast.LENGTH_LONG).show()
+                                Toast.LENGTH_LONG
+                        ).show()
                 );
     }
 
+    private void handleUserProfile(QuerySnapshot snapshot) {
 
+        if (snapshot.isEmpty()) {
+
+            Toast.makeText(
+                    this,
+                    "User profile not found",
+                    Toast.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+        String role = null;
+        String businessId = null;
+
+        for (com.google.firebase.firestore.DocumentSnapshot doc :
+                snapshot.getDocuments()) {
+
+            role = doc.getString("role");
+            businessId = doc.getString("businessId");
+
+            break;
+        }
+
+        if (businessId == null) {
+
+            Toast.makeText(
+                    this,
+                    "Business ID missing",
+                    Toast.LENGTH_LONG
+            ).show();
+
+            return;
+        }
+
+        getSharedPreferences("APP", MODE_PRIVATE)
+                .edit()
+                .putString("businessId", businessId)
+                .putString("role", role)
+                .apply();
+
+        if ("admin".equalsIgnoreCase(role)) {
+
+            startActivity(
+                    new Intent(
+                            LoginActivity.this,
+                            AdminDashboardActivity.class
+                    )
+            );
+
+        } else {
+
+            startActivity(
+                    new Intent(
+                            LoginActivity.this,
+                            DashboardActivity.class
+                    )
+            );
+        }
+
+        finish();
+    }
 }
