@@ -1,74 +1,58 @@
 package Activities;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.a10.R;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
-
-import database.DatabaseHelper;
+import java.util.Map;
 
 public class AddExpenseActivity extends AppCompatActivity {
 
-    EditText etTitle, etAmount;
-    Spinner spinnerCategory;
-    Button btnSave;
+    EditText etReason, etCategory, etAmount;
+    Button btnSaveExpense;
 
-    DatabaseHelper db;
+    FirebaseFirestore db;
+
+    String businessId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_expense);
 
-        etTitle = findViewById(R.id.etTitle);
+        etReason = findViewById(R.id.etReason);
+        etCategory = findViewById(R.id.etCategory);
         etAmount = findViewById(R.id.etAmount);
-        spinnerCategory = findViewById(R.id.spinnerCategory);
-        btnSave = findViewById(R.id.btnSaveExpense);
+        btnSaveExpense = findViewById(R.id.btnSaveExpense);
 
-        db = new DatabaseHelper(this);
+        db = FirebaseFirestore.getInstance();
 
-        // CATEGORIES
-        String[] categories = {
-                "Rent",
-                "Electricity",
-                "Transport",
-                "Salary",
-                "Internet",
-                "Tax",
-                "Stock Purchase",
-                "Miscellaneous"
-        };
+        // GET BUSINESS ID FROM LOGIN
+        SharedPreferences prefs = getSharedPreferences("APP", MODE_PRIVATE);
+        businessId = prefs.getString("businessId", "");
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                categories
-        );
-
-        spinnerCategory.setAdapter(adapter);
-
-        // SAVE BUTTON
-        btnSave.setOnClickListener(v -> saveExpense());
+        btnSaveExpense.setOnClickListener(v -> saveExpense());
     }
 
     private void saveExpense() {
 
-        String title = etTitle.getText().toString().trim();
+        String reason = etReason.getText().toString().trim();
+        String category = etCategory.getText().toString().trim();
         String amountStr = etAmount.getText().toString().trim();
-        String category = spinnerCategory.getSelectedItem().toString();
 
-        if (title.isEmpty() || amountStr.isEmpty()) {
-            Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show();
+        if (reason.isEmpty() || amountStr.isEmpty()) {
+            Toast.makeText(this, "Fill all required fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -81,22 +65,32 @@ public class AddExpenseActivity extends AppCompatActivity {
             return;
         }
 
-        String date = new SimpleDateFormat(
-                "dd MMM yyyy HH:mm:ss",
+        String dateTime = new SimpleDateFormat(
+                "dd MMM yyyy HH:mm",
                 Locale.getDefault()
         ).format(new Date());
 
-        boolean inserted = db.addExpense(
-                title,
-                amount,
-                date
-        );
+        Map<String, Object> expense = new HashMap<>();
+        expense.put("reason", reason);
+        expense.put("category", category);
+        expense.put("amount", amount);
+        expense.put("timestamp", System.currentTimeMillis());
+        expense.put("dateTime", dateTime);
 
-        if (inserted) {
-            Toast.makeText(this, "Expense Saved", Toast.LENGTH_SHORT).show();
-            finish();
-        } else {
-            Toast.makeText(this, "Failed to save expense", Toast.LENGTH_SHORT).show();
-        }
+        db.collection("businesses")
+                .document(businessId)
+                .collection("expenses")
+                .add(expense)
+                .addOnSuccessListener(doc -> {
+
+                    Toast.makeText(this, "Expense saved", Toast.LENGTH_SHORT).show();
+
+                    etReason.setText("");
+                    etCategory.setText("");
+                    etAmount.setText("");
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 }

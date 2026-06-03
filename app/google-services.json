@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1043072779250",
-    "project_id": "dropper-38fc9",
-    "storage_bucket": "dropper-38fc9.firebasestorage.app"
+    "project_number": "579412324110",
+    "project_id": "digisale-3c47b",
+    "storage_bucket": "digisale-3c47b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1043072779250:android:ecbe7f1d925206afb5216b",
+        "mobilesdk_app_id": "1:579412324110:android:97eae2cb1c88913297315f",
         "android_client_info": {
           "package_name": "com.example.a10"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBx9ib6VpTVl_eo27pNGQWdMnB9qH4umvQ"
+          "current_key": "AIzaSyCP8pcCyMRaruqTv-fSo_QDzglkU7MX4Pw"
         }
       ],
       "services": {

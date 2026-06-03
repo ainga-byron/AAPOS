@@ -12,11 +12,14 @@ import com.example.a10.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
 
-    TextInputEditText etEmail, etPassword;
-
+    TextInputEditText etEmail, etPassword, etBusinessName;
     Button btnSignUp;
 
     FirebaseAuth auth;
@@ -28,6 +31,7 @@ public class SignUpActivity extends AppCompatActivity {
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        etBusinessName = findViewById(R.id.etBusinessName);
 
         btnSignUp = findViewById(R.id.btnSignUp);
 
@@ -38,26 +42,27 @@ public class SignUpActivity extends AppCompatActivity {
 
     private void registerUser() {
 
-        String email =
-                etEmail.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        String businessName = etBusinessName.getText().toString().trim();
 
-        String password =
-                etPassword.getText().toString().trim();
+        // VALIDATION
+        if (businessName.isEmpty()) {
+            etBusinessName.setError("Business name required");
+            return;
+        }
 
-        if(email.isEmpty()) {
-
+        if (email.isEmpty()) {
             etEmail.setError("Email required");
             return;
         }
 
-        if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Enter valid email");
             return;
         }
 
-        if(password.length() < 6) {
-
+        if (password.length() < 6) {
             etPassword.setError("Minimum 6 characters");
             return;
         }
@@ -65,45 +70,80 @@ public class SignUpActivity extends AppCompatActivity {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
 
-                    if(task.isSuccessful()) {
+                    if (task.isSuccessful()) {
 
-                        FirebaseUser user =
-                                auth.getCurrentUser();
+                        FirebaseUser user = auth.getCurrentUser();
 
-                        if(user != null) {
+                        if (user == null) return;
 
-                            user.sendEmailVerification()
-                                    .addOnCompleteListener(task1 -> {
+                        String uid = user.getUid();
 
-                                        if(task1.isSuccessful()) {
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                                            Toast.makeText(
-                                                    this,
-                                                    "Verification email sent",
-                                                    Toast.LENGTH_LONG
-                                            ).show();
+                        // 🔥 CREATE BUSINESS ID
+                        String businessId = db.collection("businesses")
+                                .document()
+                                .getId();
 
-                                            auth.signOut();
+                        // 🔥 CREATE BUSINESS
+                        Map<String, Object> business = new HashMap<>();
+                        business.put("name", businessName);
+                        business.put("ownerId", uid);
+                        business.put("createdAt", System.currentTimeMillis());
 
-                                            startActivity(
-                                                    new Intent(
-                                                                SignUpActivity.this,
-                                                            LoginActivity.class
-                                                    )
-                                            );
+                        db.collection("businesses")
+                                .document(businessId)
+                                .set(business);
 
-                                            finish();
+                        // 🔥 CREATE ADMIN USER INSIDE BUSINESS
+                        Map<String, Object> admin = new HashMap<>();
+                        admin.put("email", email);
+                        admin.put("role", "admin");
+                        admin.put("businessId", businessId);
 
-                                        } else {
+                        db.collection("businesses")
+                                .document(businessId)
+                                .collection("users")
+                                .document(uid)
+                                .set(admin);
 
-                                            Toast.makeText(
-                                                    this,
-                                                    "Failed to send verification email",
-                                                    Toast.LENGTH_SHORT
-                                            ).show();
-                                        }
-                                    });
-                        }
+                        // 🔥 STORE LOCALLY
+                        getSharedPreferences("APP", MODE_PRIVATE)
+                                .edit()
+                                .putString("businessId", businessId)
+                                .putString("role", "admin")
+                                .apply();
+
+                        // 🔥 EMAIL VERIFICATION
+                        user.sendEmailVerification()
+                                .addOnCompleteListener(task1 -> {
+
+                                    if (task1.isSuccessful()) {
+
+                                        Toast.makeText(
+                                                this,
+                                                "Account created. Verify your email.",
+                                                Toast.LENGTH_LONG
+                                        ).show();
+
+                                        auth.signOut();
+
+                                        startActivity(new Intent(
+                                                SignUpActivity.this,
+                                                LoginActivity.class
+                                        ));
+
+                                        finish();
+
+                                    } else {
+
+                                        Toast.makeText(
+                                                this,
+                                                "Verification email failed",
+                                                Toast.LENGTH_SHORT
+                                        ).show();
+                                    }
+                                });
 
                     } else {
 

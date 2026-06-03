@@ -53,15 +53,31 @@ public class SalesAdapter extends RecyclerView.Adapter<SalesAdapter.ViewHolder> 
 
         Sale sale = list.get(position);
 
-        holder.tvProductName.setText(sale.getProductName());
-        holder.tvQuantity.setText("Qty: " + sale.getQuantity());
-        holder.tvPrice.setText("Price: KES " + sale.getPrice());
-        holder.tvTotal.setText("Total: KES " + sale.getTotal());
-        holder.tvDate.setText(sale.getDate());
+        // ✅ SAFE TEXT BINDING (NO CRASHES)
+
+        holder.tvProductName.setText(
+                sale.getProductName() != null ? sale.getProductName() : "Unknown Product"
+        );
+
+        holder.tvQuantity.setText(
+                "Qty: " + sale.getQuantity()
+        );
+
+        holder.tvPrice.setText(
+                "Price: KES " + sale.getPrice()
+        );
+
+        holder.tvTotal.setText(
+                "Total: KES " + sale.getTotal()
+        );
+
+        holder.tvDate.setText(
+                sale.getDate() != null ? sale.getDate() : "No Date"
+        );
     }
 
     @Override
     public int getItemCount() {
-        return list.size();
+        return list != null ? list.size() : 0;
     }
 }

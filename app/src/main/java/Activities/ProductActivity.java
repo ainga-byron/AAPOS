@@ -5,66 +5,69 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a10.R;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
 import Adapter.ProductAdapter;
-import database.DatabaseHelper;
 import models.Product;
 
 public class ProductActivity extends AppCompatActivity {
 
     RecyclerView recyclerProducts;
-
     ProductAdapter adapter;
-
     ArrayList<Product> productList;
 
-    DatabaseHelper db;
+    FirebaseFirestore db;
 
     SearchView searchView;
-
     Button btnAdd;
+
+    String businessId;
+    String role;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_product);
 
         recyclerProducts = findViewById(R.id.recyclerProducts);
-
         searchView = findViewById(R.id.searchView);
-
         btnAdd = findViewById(R.id.btnAddProduct);
 
-        String role = getIntent().getStringExtra("role");
-        if ("Cashier".equals(role)) {
+        db = FirebaseFirestore.getInstance();
 
+        productList = new ArrayList<>();
+
+        role = getIntent().getStringExtra("role");
+
+        // CASHIER RESTRICTION
+        if ("Cashier".equals(role)) {
             btnAdd.setVisibility(View.GONE);
         }
-        if ("Cashier".equals(role)) {
 
-            btnAdd.setEnabled(false);
+        // GET BUSINESS ID (VERY IMPORTANT)
+        businessId = getSharedPreferences("APP", MODE_PRIVATE)
+                .getString("businessId", null);
+
+        if (businessId == null) {
+            Toast.makeText(this, "Business not found", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        db = new DatabaseHelper(this);
+        loadProductsRealtime();
 
-        loadProducts();
-
-        btnAdd.setOnClickListener(v -> {
-
-            startActivity(
-                    new Intent(this, AddProductActivity.class)
-            );
-        });
+        btnAdd.setOnClickListener(v ->
+                startActivity(new Intent(this, AddProductActivity.class))
+        );
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
 
@@ -75,33 +78,78 @@ public class ProductActivity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-
-                adapter.filter(newText);
-
+                if (adapter != null) {
+                    adapter.filter(newText);
+                }
                 return true;
             }
         });
     }
 
-    // LOAD PRODUCTS FROM DATABASE
-    private void loadProducts() {
+    private void loadProductsRealtime() {
 
-        productList = db.getAllProducts();
+        db.collection("businesses")
+                .document(businessId)
+                .collection("products")
+                .addSnapshotListener((snapshot, e) -> {
 
-        adapter = new ProductAdapter(this, productList);
+                    if (e != null) {
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-        recyclerProducts.setLayoutManager(
-                new LinearLayoutManager(this)
-        );
+                    if (snapshot == null) return;
 
-        recyclerProducts.setAdapter(adapter);
-    }
+                    productList.clear();
 
-    @Override
-    protected void onResume() {
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-        super.onResume();
+                        Product p = new Product();
 
-        loadProducts();
+                        p.setProductId(doc.getId());
+
+                        p.setProductName(
+                                doc.getString("productName") != null
+                                        ? doc.getString("productName")
+                                        : "Unknown"
+                        );
+
+                        p.setCategory(
+                                doc.getString("category") != null
+                                        ? doc.getString("category")
+                                        : "N/A"
+                        );
+
+                        Object stockObj = doc.get("stock");
+                        int stock = (stockObj instanceof Long)
+                                ? ((Long) stockObj).intValue()
+                                : 0;
+
+                        Object priceObj = doc.get("sellingPrice");
+                        double price = (priceObj instanceof Double)
+                                ? (Double) priceObj
+                                : 0;
+
+                        p.setStock(stock);
+                        p.setSellingPrice(price);
+
+                        productList.add(p);
+                    }
+
+                    if (adapter == null) {
+
+                        adapter = new ProductAdapter(
+                                this,
+                                productList,
+                                businessId
+                        );
+
+                        recyclerProducts.setLayoutManager(new LinearLayoutManager(this));
+                        recyclerProducts.setAdapter(adapter);
+
+                    } else {
+                        adapter.notifyDataSetChanged();
+                    }
+                });
     }
 }

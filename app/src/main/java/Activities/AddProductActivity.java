@@ -3,24 +3,19 @@ package Activities;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a10.R;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.ArrayList;
-
-import Adapter.SalesAdapter;
-import database.DatabaseHelper;
-import models.Sale;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AddProductActivity extends AppCompatActivity {
 
-    EditText etProductName,
+    EditText etName,
             etCategory,
             etBuyingPrice,
             etSellingPrice,
@@ -28,131 +23,103 @@ public class AddProductActivity extends AppCompatActivity {
 
     Button btnSaveProduct;
 
-    DatabaseHelper db;
+    FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_add_product);
 
-        etProductName =
-                findViewById(R.id.etProductName);
+        etName = findViewById(R.id.etName);
+        etCategory = findViewById(R.id.etCategory);
+        etBuyingPrice = findViewById(R.id.etBuyingPrice);
+        etSellingPrice = findViewById(R.id.etSellingPrice);
+        etStock = findViewById(R.id.etStock);
 
-        etCategory =
-                findViewById(R.id.etCategory);
+        btnSaveProduct = findViewById(R.id.btnSaveProduct);
 
-        etBuyingPrice =
-                findViewById(R.id.etBuyingPrice);
-
-        etSellingPrice =
-                findViewById(R.id.etSellingPrice);
-
-        etStock =
-                findViewById(R.id.etStock);
-
-        btnSaveProduct =
-                findViewById(R.id.btnSaveProduct);
-
-        db = new DatabaseHelper(this);
+        db = FirebaseFirestore.getInstance();
 
         btnSaveProduct.setOnClickListener(v -> {
-
-            String name =
-                    etProductName.getText().toString().trim();
-
-            String category =
-                    etCategory.getText().toString().trim();
-
-            String buying =
-                    etBuyingPrice.getText().toString().trim();
-
-            String selling =
-                    etSellingPrice.getText().toString().trim();
-
-            String stockQty =
-                    etStock.getText().toString().trim();
-
-            if(name.isEmpty()
-                    || category.isEmpty()
-                    || buying.isEmpty()
-                    || selling.isEmpty()
-                    || stockQty.isEmpty()) {
-
-                Toast.makeText(this,
-                        "Fill all fields",
-                        Toast.LENGTH_LONG).show();
-
-                return;
-            }
-
-            boolean success = db.addProduct(
-                    name,
-                    category,
-                    Double.parseDouble(buying),
-                    Double.parseDouble(selling),
-                    Integer.parseInt(stockQty)
-            );
-
-            if(success) {
-
-                Toast.makeText(this,
-                        "Product Added",
-                        Toast.LENGTH_LONG).show();
-
-                finish();
-
-            } else {
-
-                Toast.makeText(this,
-                        "Failed",
-                        Toast.LENGTH_LONG).show();
-            }
+            saveProduct();
         });
     }
 
-    public static class SalesReportActivity extends AppCompatActivity {
+    private void saveProduct() {
 
-        RecyclerView recyclerSales;
-        TextView tvTotalRevenue;
+        String name =
+                etName.getText().toString().trim();
 
-        DatabaseHelper db;
-        ArrayList<Sale> salesList;
-        SalesAdapter adapter;
+        String category =
+                etCategory.getText().toString().trim();
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_sales);
+        String buyingPriceText =
+                etBuyingPrice.getText().toString().trim();
 
-            recyclerSales = findViewById(R.id.recyclerSales);
+        String sellingPriceText =
+                etSellingPrice.getText().toString().trim();
 
+        String stockText =
+                etStock.getText().toString().trim();
 
-            db = new DatabaseHelper(this);
+        if (name.isEmpty() ||
+                category.isEmpty() ||
+                buyingPriceText.isEmpty() ||
+                sellingPriceText.isEmpty() ||
+                stockText.isEmpty()) {
 
-            salesList = db.getAllSales();
+            Toast.makeText(this,
+                    "Fill all fields",
+                    Toast.LENGTH_SHORT).show();
 
-            adapter = new SalesAdapter(this, salesList);
-
-            recyclerSales.setLayoutManager(
-                    new LinearLayoutManager(this)
-            );
-
-            recyclerSales.setAdapter(adapter);
-
-            calculateTotalRevenue();
+            return;
         }
 
-        private void calculateTotalRevenue() {
+        double buyingPrice =
+                Double.parseDouble(buyingPriceText);
 
-            double total = 0;
+        double sellingPrice =
+                Double.parseDouble(sellingPriceText);
 
-            for (Sale sale : salesList) {
-                total += sale.getTotal();
-            }
+        int stock =
+                Integer.parseInt(stockText);
 
-            tvTotalRevenue.setText("Total Revenue: KES " + total);
-        }
+        Map<String, Object> product =
+                new HashMap<>();
+
+        product.put("name", name);
+        product.put("category", category);
+        product.put("buyingPrice", buyingPrice);
+        product.put("sellingPrice", sellingPrice);
+        product.put("stock", stock);
+
+        product.put("timestamp",
+                System.currentTimeMillis());
+
+        db.collection("products")
+                .add(product)
+                .addOnSuccessListener(documentReference -> {
+
+                    Toast.makeText(this,
+                            "Product Saved",
+                            Toast.LENGTH_SHORT).show();
+
+                    clearFields();
+                })
+                .addOnFailureListener(e -> {
+
+                    Toast.makeText(this,
+                            e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
+    }
+
+    private void clearFields() {
+
+        etName.setText("");
+        etCategory.setText("");
+        etBuyingPrice.setText("");
+        etSellingPrice.setText("");
+        etStock.setText("");
     }
 }

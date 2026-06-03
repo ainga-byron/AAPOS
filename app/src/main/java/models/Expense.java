@@ -2,59 +2,40 @@ package models;
 
 public class Expense {
 
-    private int id;
+    private String expenseId;
     private String title;
-
+    private String category;
     private double amount;
-    private String date;
+    private long timestamp;
+    private String dateTime;
 
-    // EMPTY CONSTRUCTOR
     public Expense() {}
 
-    // FULL CONSTRUCTOR
-    public Expense(int id, String title, String category, double amount, String date) {
-        this.id = id;
+    public Expense(String expenseId, String title, String category,
+                   double amount, long timestamp, String dateTime) {
+        this.expenseId = expenseId;
         this.title = title;
+        this.category = category;
         this.amount = amount;
-        this.date = date;
+        this.timestamp = timestamp;
+        this.dateTime = dateTime;
     }
 
-    // GETTERS
-    public int getId() {
-        return id;
-    }
+    public String getExpenseId() { return expenseId; }
+    public void setExpenseId(String expenseId) { this.expenseId = expenseId; }
 
-    public String getTitle() {
-        return title;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public double getAmount() {
-        return amount;
-    }
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
 
-    public String getDate() {
-        return date;
-    }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 
-    // SETTERS
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-
-
-    public void setAmount(double amount) {
-        this.amount = amount;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-
+    public String getDateTime() { return dateTime; }
+    public void setDateTime(String dateTime) { this.dateTime = dateTime; }
 }

@@ -125,15 +125,6 @@
                     android:backgroundTint="#D4AF37"/>
 
 
-                <TextView
-                    android:id="@+id/tvSignup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Don't have an account? Sign Up"
-                    android:textColor="#D4AF37"
-                    android:textSize="14sp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="20dp"/>
 
             </LinearLayout>
 

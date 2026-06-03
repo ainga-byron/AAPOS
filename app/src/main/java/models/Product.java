@@ -2,73 +2,57 @@ package models;
 
 public class Product {
 
-    private int id;
-    private String name;
+    private String productId;
+    private String productName;
     private String category;
     private double buyingPrice;
     private double sellingPrice;
     private int stock;
 
-    // EMPTY CONSTRUCTOR
     public Product() {}
 
-    // FULL CONSTRUCTOR
-    public Product(int id, String name, String category,
-                   double buyingPrice, double sellingPrice,
-                   int stock) {
-
-        this.id = id;
-        this.name = name;
-        this.category = category;
-        this.buyingPrice = buyingPrice;
-        this.sellingPrice = sellingPrice;
-        this.stock = stock;
+    public String getProductId() {
+        return productId;
     }
 
-    // GETTERS
-    public int getId() {
-        return id;
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
-    public String getName() {
-        return name;
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public String getCategory() {
         return category;
     }
 
-    public double getBuyingPrice() {
-        return buyingPrice;
-    }
-
-    public double getSellingPrice() {
-        return sellingPrice;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    // SETTERS
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public double getBuyingPrice() {
+        return buyingPrice;
     }
 
     public void setBuyingPrice(double buyingPrice) {
         this.buyingPrice = buyingPrice;
     }
 
+    public double getSellingPrice() {
+        return sellingPrice;
+    }
+
     public void setSellingPrice(double sellingPrice) {
         this.sellingPrice = sellingPrice;
+    }
+
+    public int getStock() {
+        return stock;
     }
 
     public void setStock(int stock) {

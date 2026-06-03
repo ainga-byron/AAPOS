@@ -16,10 +16,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a10.R;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
-import database.DatabaseHelper;
 import models.Cart;
 import models.Product;
 
@@ -31,10 +31,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
     public static ArrayList<Cart> cartList = new ArrayList<>();
 
-    public ProductAdapter(Context context, ArrayList<Product> productList) {
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+
+    String businessId;
+
+    public ProductAdapter(Context context, ArrayList<Product> productList, String businessId) {
         this.context = context;
         this.productList = productList;
         this.productListFull = new ArrayList<>(productList);
+        this.businessId = businessId;
     }
 
     @NonNull
@@ -52,20 +57,27 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         Product product = productList.get(position);
 
-        holder.tvProductName.setText(product.getName());
-        holder.tvCategory.setText("Category: " + product.getCategory());
+        holder.tvProductName.setText(product.getProductName() != null ? product.getProductName() : "");
+        holder.tvCategory.setText("Category: " + (product.getCategory() != null ? product.getCategory() : ""));
         holder.tvBuyingPrice.setText("Buying: KES " + product.getBuyingPrice());
         holder.tvSellingPrice.setText("Selling: KES " + product.getSellingPrice());
         holder.tvStock.setText("Stock: " + product.getStock());
 
-        // ADD TO CART
+        // ADD TO CART (SAFE)
         holder.btnAddToCart.setOnClickListener(v -> {
+
+            if (product.getProductId() == null) {
+                Toast.makeText(context, "Invalid product", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             boolean exists = false;
 
             for (Cart item : cartList) {
 
-                if (item.getProductId() == product.getId()) {
+                if (item.getProductId() != null &&
+                        item.getProductId().equals(product.getProductId())) {
+
                     item.setQuantity(item.getQuantity() + 1);
                     exists = true;
                     break;
@@ -74,8 +86,8 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             if (!exists) {
                 cartList.add(new Cart(
-                        product.getId(),
-                        product.getName(),
+                        product.getProductId(),
+                        product.getProductName(),
                         product.getSellingPrice(),
                         1
                 ));
@@ -93,11 +105,10 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             holder.itemView.setBackgroundColor(0xFFFFFFFF);
         }
 
-        // UPDATE BUTTON
+        // UPDATE PRODUCT
         holder.btnUpdate.setOnClickListener(v -> {
 
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
-
             View view = LayoutInflater.from(context)
                     .inflate(R.layout.dialog_edit_product, null);
 
@@ -113,16 +124,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                     "Rum", "Soft Drinks", "Energy Drinks", "Snacks"
             };
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(
+            ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
                     context,
                     android.R.layout.simple_spinner_dropdown_item,
                     categories
             );
 
-            spinnerCategory.setAdapter(adapter);
+            spinnerCategory.setAdapter(spinnerAdapter);
 
-            // SET VALUES
-            etName.setText(product.getName());
+            etName.setText(product.getProductName());
             etBuying.setText(String.valueOf(product.getBuyingPrice()));
             etSelling.setText(String.valueOf(product.getSellingPrice()));
             etStock.setText(String.valueOf(product.getStock()));
@@ -132,45 +142,38 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             if (pos >= 0) spinnerCategory.setSelection(pos);
 
-            builder.setView(view);
-            AlertDialog dialog = builder.create();
+            AlertDialog dialog = builder.setView(view).create();
 
             btnSave.setOnClickListener(v1 -> {
 
-                String name = etName.getText().toString().trim();
-                String category = spinnerCategory.getSelectedItem().toString();
+                firestore.collection("businesses")
+                        .document(businessId)
+                        .collection("products")
+                        .document(product.getProductId())
+                        .update(
+                                "productName", etName.getText().toString(),
+                                "category", spinnerCategory.getSelectedItem().toString(),
+                                "buyingPrice", Double.parseDouble(etBuying.getText().toString()),
+                                "sellingPrice", Double.parseDouble(etSelling.getText().toString()),
+                                "stock", Integer.parseInt(etStock.getText().toString())
+                        )
+                        .addOnSuccessListener(unused -> {
 
-                double buying = Double.parseDouble(etBuying.getText().toString());
-                double selling = Double.parseDouble(etSelling.getText().toString());
-                int stock = Integer.parseInt(etStock.getText().toString());
+                            // UPDATE LOCAL OBJECT (IMPORTANT FIX)
+                            product.setProductName(etName.getText().toString());
+                            product.setCategory(spinnerCategory.getSelectedItem().toString());
+                            product.setBuyingPrice(Double.parseDouble(etBuying.getText().toString()));
+                            product.setSellingPrice(Double.parseDouble(etSelling.getText().toString()));
+                            product.setStock(Integer.parseInt(etStock.getText().toString()));
 
-                DatabaseHelper db = new DatabaseHelper(context);
+                            notifyDataSetChanged();
 
-                boolean updated = db.updateProduct(
-                        product.getId(),
-                        name,
-                        category,
-                        buying,
-                        selling,
-                        stock
-                );
-
-                if (updated) {
-
-                    product.setName(name);
-                    product.setCategory(category);
-                    product.setBuyingPrice(buying);
-                    product.setSellingPrice(selling);
-                    product.setStock(stock);
-
-                    notifyDataSetChanged();
-
-                    Toast.makeText(context, "Updated", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-
-                } else {
-                    Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show();
-                }
+                            Toast.makeText(context, "Updated", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                        })
+                        .addOnFailureListener(e ->
+                                Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show()
+                        );
             });
 
             dialog.show();
@@ -182,6 +185,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return productList.size();
     }
 
+    // FILTER FIXED
     public void filter(String text) {
 
         productList.clear();
@@ -194,8 +198,12 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             for (Product product : productListFull) {
 
-                if (product.getName().toLowerCase().contains(query)
-                        || product.getCategory().toLowerCase().contains(query)) {
+                if ((product.getProductName() != null &&
+                        product.getProductName().toLowerCase().contains(query))
+                        ||
+                        (product.getCategory() != null &&
+                                product.getCategory().toLowerCase().contains(query))) {
+
                     productList.add(product);
                 }
             }

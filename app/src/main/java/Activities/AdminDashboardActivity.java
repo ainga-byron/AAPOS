@@ -59,12 +59,12 @@ public class AdminDashboardActivity
         });
         cardReports.setOnClickListener(v -> {
             startActivity(
-                    new Intent(this, ExpenseReportActivity.class)
+                    new Intent(this, ReportActivity.class)
             );
         });
         cardExpenses.setOnClickListener(v -> {
             startActivity(
-                    new Intent(this, Expenses.class)
+                    new Intent(this, ExpenseReportActivity.class)
             );
         });
         cardUsers.setOnClickListener(v -> {

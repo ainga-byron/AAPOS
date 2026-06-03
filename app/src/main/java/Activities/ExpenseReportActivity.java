@@ -1,6 +1,5 @@
 package Activities;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -9,11 +8,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a10.R;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
 import Adapter.ExpenseAdapter;
-import database.DatabaseHelper;
 import models.Expense;
 
 public class ExpenseReportActivity extends AppCompatActivity {
@@ -21,11 +21,13 @@ public class ExpenseReportActivity extends AppCompatActivity {
     TextView tvTotalExpenses;
     RecyclerView recyclerExpenses;
 
-    DatabaseHelper db;
+    FirebaseFirestore db;
+
     ArrayList<Expense> expenseList;
     ExpenseAdapter adapter;
 
-    @SuppressLint("MissingInflatedId")
+    String businessId = "YOUR_BUSINESS_ID"; // replace with session
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +36,7 @@ public class ExpenseReportActivity extends AppCompatActivity {
         tvTotalExpenses = findViewById(R.id.tvTotalExpenses);
         recyclerExpenses = findViewById(R.id.recyclerExpenses);
 
-        db = new DatabaseHelper(this);
+        db = FirebaseFirestore.getInstance();
 
         recyclerExpenses.setLayoutManager(new LinearLayoutManager(this));
 
@@ -43,29 +45,50 @@ public class ExpenseReportActivity extends AppCompatActivity {
 
     private void loadExpenses() {
 
-        expenseList = db.getAllExpenses();
+        expenseList = new ArrayList<>();
 
-        if (expenseList == null) {
-            expenseList = new ArrayList<>();
-        }
+        db.collection("businesses")
+                .document(businessId)
+                .collection("expenses")
+                .get()
+                .addOnSuccessListener(snapshot -> {
 
-        adapter = new ExpenseAdapter(this, expenseList);
-        recyclerExpenses.setAdapter(adapter);
+                    double total = 0;
 
-        double total = calculateTotal();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-        tvTotalExpenses.setText("Total Expenses: KES " + total);
-    }
+                        Expense e = new Expense();
 
-    private double calculateTotal() {
+                        e.setExpenseId(doc.getId());
+                        e.setTitle(doc.getString("title"));
+                        e.setCategory(doc.getString("category"));
 
-        double total = 0;
+                        Object amountObj = doc.get("amount");
+                        double amount = 0;
 
-        for (Expense e : expenseList) {
-            total += e.getAmount();
-        }
+                        if (amountObj instanceof Long) {
+                            amount = ((Long) amountObj).doubleValue();
+                        } else if (amountObj instanceof Double) {
+                            amount = (Double) amountObj;
+                        } else if (amountObj instanceof String) {
+                            try {
+                                amount = Double.parseDouble((String) amountObj);
+                            } catch (Exception ignored) {}
+                        }
 
-        return total;
+                        e.setAmount(amount);
+                        total += amount;
+
+                        e.setDateTime(doc.getString("dateTime"));
+
+                        expenseList.add(e);
+                    }
+
+                    adapter = new ExpenseAdapter(this, expenseList);
+                    recyclerExpenses.setAdapter(adapter);
+
+                    tvTotalExpenses.setText("Total Expenses: KES " + total);
+                });
     }
 
     @Override

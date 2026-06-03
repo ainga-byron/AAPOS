@@ -1,35 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="12dp">
+
+    <!-- INPUT FIELDS AREA (optional grouped) -->
+    <EditText
+        android:id="@+id/etUsername"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Username"/>
 
     <EditText
         android:id="@+id/etEmail"
-        android:hint="Email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textEmailAddress"/>
+        android:hint="Email"/>
 
     <EditText
         android:id="@+id/etPassword"
-        android:hint="Password"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:hint="Password"/>
 
-    <EditText
-        android:id="@+id/etUsername"
-        android:hint="Username"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
+    <!-- ADD USER BUTTON -->
     <Button
         android:id="@+id/btnCreateUser"
-        android:text="Create Cashier"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="Add User"
+        android:layout_marginTop="10dp"/>
 
+    <!-- SECTION TITLE -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Existing Users"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- USER LIST -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerUsers"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 </LinearLayout>

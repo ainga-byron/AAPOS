@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -11,16 +10,8 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Product"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="24dp"/>
-
         <EditText
-            android:id="@+id/etProductName"
+            android:id="@+id/etName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Product Name"/>
@@ -30,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Category"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="12dp"/>
 
         <EditText
             android:id="@+id/etBuyingPrice"
@@ -38,7 +29,7 @@
             android:layout_height="wrap_content"
             android:hint="Buying Price"
             android:inputType="numberDecimal"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="12dp"/>
 
         <EditText
             android:id="@+id/etSellingPrice"
@@ -46,7 +37,7 @@
             android:layout_height="wrap_content"
             android:hint="Selling Price"
             android:inputType="numberDecimal"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="12dp"/>
 
         <EditText
             android:id="@+id/etStock"
@@ -54,14 +45,14 @@
             android:layout_height="wrap_content"
             android:hint="Stock Quantity"
             android:inputType="number"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="12dp"/>
 
         <Button
             android:id="@+id/btnSaveProduct"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Save Product"
-            android:layout_marginTop="24dp"/>
+            android:layout_marginTop="20dp"/>
 
     </LinearLayout>
 

@@ -17,19 +17,27 @@
         android:textColor="#FFEB3B"
         android:padding="10dp" />
 
-    <!-- OPTIONAL DIVIDER -->
+    <!-- FILTER DROPDOWN -->
+    <Spinner
+        android:id="@+id/spinnerFilter"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginBottom="10dp"
+        android:background="#FFFFFF" />
+
+    <!-- DIVIDER -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#DDDDDD"
         android:layout_marginBottom="10dp"/>
 
+    <!-- SALES LIST -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerSales"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scrollbars="vertical"
-        android:textColor="#FFEB3B"
-        />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
 
 </LinearLayout>

@@ -1,4 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -6,62 +9,74 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
-
-        <!-- SUMMARY -->
-        <TextView
-            android:id="@+id/tvTotalSales"
-            android:text="Total Sales"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+        android:padding="16dp"
+        tools:ignore="MissingClass">
 
         <TextView
-            android:id="@+id/tvTotalExpenses"
-            android:text="Total Expenses"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BUSINESS REPORTS"
+            android:textSize="24sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvSales"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sales: KES 0"
+            android:textSize="20sp"
+            android:paddingTop="20dp"/>
+
+        <TextView
+            android:id="@+id/tvExpenses"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Expenses: KES 0"
+            android:textSize="20sp"
+            android:paddingTop="12dp"/>
 
         <TextView
             android:id="@+id/tvProfit"
-            android:text="Profit"
-            android:textSize="20sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Profit: KES 0"
+            android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#2E7D32"
+            android:paddingTop="12dp"/>
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChart"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="20dp"/>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="10dp"/>
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="16dp">
 
-        <!-- SALES -->
-        <TextView
-            android:text="Sales Report"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingTop="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <Button
+                android:id="@+id/btnDaily"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Daily"/>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerSales"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"/>
+            <Button
+                android:id="@+id/btnWeekly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Weekly"
+                android:layout_marginStart="10dp"/>
 
-        <!-- EXPENSES -->
-        <TextView
-            android:text="Expense Report"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:paddingTop="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerExpenses"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"/>
+            <Button
+                android:id="@+id/btnMonthly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Monthly"
+                android:layout_marginStart="10dp"/>
+        </LinearLayout>
 
     </LinearLayout>
+
 </ScrollView>

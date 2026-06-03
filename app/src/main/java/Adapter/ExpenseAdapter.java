@@ -56,7 +56,7 @@ public class ExpenseAdapter extends RecyclerView.Adapter<ExpenseAdapter.ViewHold
 
         holder.tvTitle.setText(e.getTitle());
         holder.tvAmount.setText("KES " + e.getAmount());
-        holder.tvDate.setText(e.getDate());
+        holder.tvDate.setText(String.valueOf(e.getTimestamp()));
     }
 
     @Override
