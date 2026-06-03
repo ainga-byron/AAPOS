@@ -10,8 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.a10.R;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -42,106 +42,71 @@ public class LoginActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
 
         if (email.isEmpty() || password.isEmpty()) {
-
-            Toast.makeText(
-                    this,
-                    "Enter all fields",
-                    Toast.LENGTH_SHORT
-            ).show();
-
+            Toast.makeText(this, "Enter all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
         auth.signInWithEmailAndPassword(email, password)
-
                 .addOnSuccessListener(authResult -> {
 
                     String uid = authResult.getUser().getUid();
 
+                    // STEP 1: FIND USER IN ALL BUSINESSES
                     db.collectionGroup("users")
                             .whereEqualTo("email", email)
                             .get()
+                            .addOnSuccessListener(snapshot -> {
 
-                            .addOnSuccessListener(this::handleUserProfile)
+                                if (snapshot.isEmpty()) {
+                                    Toast.makeText(this,
+                                            "User not registered in any business",
+                                            Toast.LENGTH_LONG).show();
+                                    return;
+                                }
 
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(
-                                            LoginActivity.this,
-                                            e.getMessage(),
-                                            Toast.LENGTH_LONG
-                                    ).show()
-                            );
+                                DocumentSnapshot userDoc = snapshot.getDocuments().get(0);
+
+                                String role = userDoc.getString("role");
+                                String businessId = userDoc.getReference()
+                                        .getParent()
+                                        .getParent()
+                                        .getId();
+
+                                saveSession(businessId, role);
+
+                                openDashboard(role);
+                            });
 
                 })
-
                 .addOnFailureListener(e ->
-                        Toast.makeText(
-                                LoginActivity.this,
-                                e.getMessage(),
-                                Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show()
                 );
     }
 
-    private void handleUserProfile(QuerySnapshot snapshot) {
-
-        if (snapshot.isEmpty()) {
-
-            Toast.makeText(
-                    this,
-                    "User profile not found",
-                    Toast.LENGTH_LONG
-            ).show();
-
-            return;
-        }
-
-        String role = null;
-        String businessId = null;
-
-        for (com.google.firebase.firestore.DocumentSnapshot doc :
-                snapshot.getDocuments()) {
-
-            role = doc.getString("role");
-            businessId = doc.getString("businessId");
-
-            break;
-        }
-
-        if (businessId == null) {
-
-            Toast.makeText(
-                    this,
-                    "Business ID missing",
-                    Toast.LENGTH_LONG
-            ).show();
-
-            return;
-        }
-
+    private void saveSession(String businessId, String role) {
         getSharedPreferences("APP", MODE_PRIVATE)
                 .edit()
                 .putString("businessId", businessId)
                 .putString("role", role)
                 .apply();
+    }
+
+    private void openDashboard(String role) {
 
         if ("admin".equalsIgnoreCase(role)) {
 
-            startActivity(
-                    new Intent(
-                            LoginActivity.this,
-                            AdminDashboardActivity.class
-                    )
-            );
+            startActivity(new Intent(this, AdminDashboardActivity.class));
+
+        } else if ("cashier".equalsIgnoreCase(role)) {
+
+            startActivity(new Intent(this, DashboardActivity.class));
 
         } else {
 
-            startActivity(
-                    new Intent(
-                            LoginActivity.this,
-                            DashboardActivity.class
-                    )
-            );
+            Toast.makeText(this,
+                    "Unknown role: " + role,
+                    Toast.LENGTH_LONG).show();
+            return;
         }
 
         finish();

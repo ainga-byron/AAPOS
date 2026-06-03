@@ -23,6 +23,7 @@ public class SignUpActivity extends AppCompatActivity {
     Button btnSignUp;
 
     FirebaseAuth auth;
+    FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +33,10 @@ public class SignUpActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etBusinessName = findViewById(R.id.etBusinessName);
-
         btnSignUp = findViewById(R.id.btnSignUp);
 
         auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         btnSignUp.setOnClickListener(v -> registerUser());
     }
@@ -46,113 +47,67 @@ public class SignUpActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String businessName = etBusinessName.getText().toString().trim();
 
-        // VALIDATION
         if (businessName.isEmpty()) {
             etBusinessName.setError("Business name required");
             return;
         }
 
-        if (email.isEmpty()) {
-            etEmail.setError("Email required");
-            return;
-        }
-
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Enter valid email");
+        if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Valid email required");
             return;
         }
 
         if (password.length() < 6) {
-            etPassword.setError("Minimum 6 characters");
+            etPassword.setError("Min 6 characters");
             return;
         }
 
         auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
+                .addOnSuccessListener(authResult -> {
 
-                    if (task.isSuccessful()) {
+                    FirebaseUser user = auth.getCurrentUser();
+                    if (user == null) return;
 
-                        FirebaseUser user = auth.getCurrentUser();
+                    String uid = user.getUid();
 
-                        if (user == null) return;
+                    // CREATE BUSINESS ID = SAME AS UID LOGIC SAFER
+                    String businessId = db.collection("businesses").document().getId();
 
-                        String uid = user.getUid();
+                    Map<String, Object> business = new HashMap<>();
+                    business.put("name", businessName);
+                    business.put("ownerUid", uid);
+                    business.put("email", email);
+                    business.put("createdAt", System.currentTimeMillis());
 
-                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    db.collection("businesses")
+                            .document(businessId)
+                            .set(business)
+                            .addOnSuccessListener(unused -> {
 
-                        // 🔥 CREATE BUSINESS ID
-                        String businessId = db.collection("businesses")
-                                .document()
-                                .getId();
+                                // SAVE LOCALLY
+                                getSharedPreferences("APP", MODE_PRIVATE)
+                                        .edit()
+                                        .putString("businessId", businessId)
+                                        .putString("role", "admin")
+                                        .apply();
 
-                        // 🔥 CREATE BUSINESS
-                        Map<String, Object> business = new HashMap<>();
-                        business.put("name", businessName);
-                        business.put("ownerId", uid);
-                        business.put("createdAt", System.currentTimeMillis());
+                                user.sendEmailVerification();
 
-                        db.collection("businesses")
-                                .document(businessId)
-                                .set(business);
+                                Toast.makeText(this,
+                                        "Account created. Please verify email.",
+                                        Toast.LENGTH_LONG).show();
 
-                        // 🔥 CREATE ADMIN USER INSIDE BUSINESS
-                        Map<String, Object> admin = new HashMap<>();
-                        admin.put("email", email);
-                        admin.put("role", "admin");
-                        admin.put("businessId", businessId);
+                                auth.signOut();
 
-                        db.collection("businesses")
-                                .document(businessId)
-                                .collection("users")
-                                .document(uid)
-                                .set(admin);
-
-                        // 🔥 STORE LOCALLY
-                        getSharedPreferences("APP", MODE_PRIVATE)
-                                .edit()
-                                .putString("businessId", businessId)
-                                .putString("role", "admin")
-                                .apply();
-
-                        // 🔥 EMAIL VERIFICATION
-                        user.sendEmailVerification()
-                                .addOnCompleteListener(task1 -> {
-
-                                    if (task1.isSuccessful()) {
-
-                                        Toast.makeText(
-                                                this,
-                                                "Account created. Verify your email.",
-                                                Toast.LENGTH_LONG
-                                        ).show();
-
-                                        auth.signOut();
-
-                                        startActivity(new Intent(
-                                                SignUpActivity.this,
-                                                LoginActivity.class
-                                        ));
-
-                                        finish();
-
-                                    } else {
-
-                                        Toast.makeText(
-                                                this,
-                                                "Verification email failed",
-                                                Toast.LENGTH_SHORT
-                                        ).show();
-                                    }
-                                });
-
-                    } else {
-
-                        Toast.makeText(
-                                this,
-                                task.getException().getMessage(),
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
-                });
+                                startActivity(new Intent(this, LoginActivity.class));
+                                finish();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show()
+                            );
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show()
+                );
     }
 }
