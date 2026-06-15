@@ -32,7 +32,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                        OnCartChangeListener listener) {
 
         this.context = context;
-        this.cartList = cartList;
+        this.cartList = (cartList != null) ? cartList : new ArrayList<>();
         this.listener = listener;
     }
 
@@ -40,7 +40,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     @Override
     public CartViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        View view = LayoutInflater.from(context)
+        View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.cart_item, parent, false);
 
         return new CartViewHolder(view);
@@ -49,13 +49,18 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     @Override
     public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
 
+        if (cartList == null || position >= cartList.size()) return;
+
         Cart cart = cartList.get(position);
 
-        holder.tvName.setText(cart.getProductName());
+        if (cart == null) return;
+
+        holder.tvName.setText(
+                cart.getProductName() != null ? cart.getProductName() : "Item"
+        );
 
         holder.tvQty.setText("Qty: " + cart.getQuantity());
 
-        // ✔ FIX 1: show unit price correctly
         holder.tvPrice.setText("Price: KES " + cart.getPrice());
 
         holder.tvTotal.setText("Total: KES " + cart.getTotal());
@@ -67,11 +72,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             if (pos == RecyclerView.NO_POSITION) return;
 
             Cart item = cartList.get(pos);
+            if (item == null) return;
 
             item.setQuantity(item.getQuantity() + 1);
 
             notifyItemChanged(pos);
-            listener.onCartChanged();
+
+            if (listener != null) listener.onCartChanged();
         });
 
         // ➖ MINUS
@@ -81,6 +88,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             if (pos == RecyclerView.NO_POSITION) return;
 
             Cart item = cartList.get(pos);
+            if (item == null) return;
 
             if (item.getQuantity() > 1) {
 
@@ -93,13 +101,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                 notifyItemRemoved(pos);
             }
 
-            listener.onCartChanged();
+            if (listener != null) listener.onCartChanged();
         });
     }
 
     @Override
     public int getItemCount() {
-        return cartList.size();
+        return (cartList != null) ? cartList.size() : 0;
     }
 
     public static class CartViewHolder extends RecyclerView.ViewHolder {

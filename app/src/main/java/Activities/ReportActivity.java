@@ -1,8 +1,11 @@
 package Activities;
 
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,20 +23,17 @@ import java.util.List;
 public class ReportActivity extends AppCompatActivity {
 
     TextView tvSales, tvExpenses, tvProfit;
-
     Button btnDaily, btnWeekly, btnMonthly;
 
     FirebaseFirestore db;
+    LineChart lineChart;
 
     double totalSales = 0;
     double totalExpenses = 0;
 
-    LineChart lineChart;
+    long currentStartTime = 0;
 
-    // ✅ FIXED: correct chart data lists
-    List<Entry> salesEntries = new ArrayList<>();
-    List<Entry> expenseEntries = new ArrayList<>();
-    List<Entry> profitEntries = new ArrayList<>();
+    String businessId; // ✅ FIX HERE
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,43 +52,47 @@ public class ReportActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        applyFilter("daily");
+        SharedPreferences prefs = getSharedPreferences("APP", MODE_PRIVATE);
+        businessId = prefs.getString("businessId", "");
+
+        if (businessId == null || businessId.isEmpty()) {
+            Toast.makeText(this, "Business ID missing", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         btnDaily.setOnClickListener(v -> applyFilter("daily"));
         btnWeekly.setOnClickListener(v -> applyFilter("weekly"));
         btnMonthly.setOnClickListener(v -> applyFilter("monthly"));
+
+        applyFilter("daily");
     }
 
-    // FILTER
     private void applyFilter(String type) {
 
         long now = System.currentTimeMillis();
-        long startTime = 0;
 
         switch (type) {
-
             case "daily":
-                startTime = now - (24 * 60 * 60 * 1000);
+                currentStartTime = now - (24L * 60 * 60 * 1000);
                 break;
-
             case "weekly":
-                startTime = now - (7L * 24 * 60 * 60 * 1000);
+                currentStartTime = now - (7L * 24 * 60 * 60 * 1000);
                 break;
-
             case "monthly":
-                startTime = now - (30L * 24 * 60 * 60 * 1000);
+                currentStartTime = now - (30L * 24 * 60 * 60 * 1000);
                 break;
         }
 
-        loadSales(startTime);
-        loadExpenses(startTime);
+        loadSales();
+        loadExpenses();
     }
 
-    // SALES
-    private void loadSales(long startTime) {
+    private void loadSales() {
 
-        db.collection("sales")
-                .whereGreaterThan("timestamp", startTime)
+        db.collection("businesses")
+                .document(businessId)
+                .collection("sales")
+                .whereGreaterThan("timestamp", currentStartTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
 
@@ -96,25 +100,30 @@ public class ReportActivity extends AppCompatActivity {
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-                        Double amount = doc.getDouble("totalAmount");
+                        Object amountObj = doc.get("totalAmount");
 
-                        if (amount != null) {
-                            totalSales += amount;
+                        double amount = 0;
+
+                        if (amountObj instanceof Long) {
+                            amount = ((Long) amountObj).doubleValue();
+                        } else if (amountObj instanceof Double) {
+                            amount = (Double) amountObj;
                         }
+
+                        totalSales += amount;
                     }
 
                     tvSales.setText("Sales: KES " + totalSales);
-
-                    updateProfit();
-                    updateChart(); // ✅ IMPORTANT FIX
+                    updateUI();
                 });
     }
 
-    // EXPENSES
-    private void loadExpenses(long startTime) {
+    private void loadExpenses() {
 
-        db.collection("expenses")
-                .whereGreaterThan("timestamp", startTime)
+        db.collection("businesses")
+                .document(businessId)
+                .collection("expenses")
+                .whereGreaterThan("timestamp", currentStartTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
 
@@ -122,47 +131,50 @@ public class ReportActivity extends AppCompatActivity {
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-                        Double amount = doc.getDouble("amount");
+                        Object amountObj = doc.get("amount");
 
-                        if (amount != null) {
-                            totalExpenses += amount;
+                        double amount = 0;
+
+                        if (amountObj instanceof Long) {
+                            amount = ((Long) amountObj).doubleValue();
+                        } else if (amountObj instanceof Double) {
+                            amount = (Double) amountObj;
                         }
+
+                        totalExpenses += amount;
                     }
 
                     tvExpenses.setText("Expenses: KES " + totalExpenses);
-
-                    updateProfit();
-                    updateChart(); // ✅ IMPORTANT FIX
+                    updateUI();
                 });
     }
 
-    // PROFIT
-    private void updateProfit() {
+    private void updateUI() {
 
         double profit = totalSales - totalExpenses;
-
         tvProfit.setText("Profit: KES " + profit);
+
+        drawChart();
     }
 
-    // CHART
-    private void updateChart() {
+    private void drawChart() {
 
-        salesEntries.clear();
-        expenseEntries.clear();
-        profitEntries.clear();
+        List<Entry> salesEntries = new ArrayList<>();
+        List<Entry> expenseEntries = new ArrayList<>();
+        List<Entry> profitEntries = new ArrayList<>();
 
         salesEntries.add(new Entry(0, (float) totalSales));
         expenseEntries.add(new Entry(1, (float) totalExpenses));
         profitEntries.add(new Entry(2, (float) (totalSales - totalExpenses)));
 
         LineDataSet salesSet = new LineDataSet(salesEntries, "Sales");
-        salesSet.setColor(android.graphics.Color.GREEN);
+        salesSet.setColor(Color.GREEN);
 
         LineDataSet expenseSet = new LineDataSet(expenseEntries, "Expenses");
-        expenseSet.setColor(android.graphics.Color.RED);
+        expenseSet.setColor(Color.RED);
 
         LineDataSet profitSet = new LineDataSet(profitEntries, "Profit");
-        profitSet.setColor(android.graphics.Color.BLUE);
+        profitSet.setColor(Color.BLUE);
 
         LineData data = new LineData(salesSet, expenseSet, profitSet);
 

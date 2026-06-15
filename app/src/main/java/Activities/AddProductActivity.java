@@ -15,6 +15,7 @@ import java.util.Map;
 
 public class AddProductActivity extends AppCompatActivity {
 
+
     EditText etName,
             etCategory,
             etBuyingPrice,
@@ -24,6 +25,8 @@ public class AddProductActivity extends AppCompatActivity {
     Button btnSaveProduct;
 
     FirebaseFirestore db;
+
+    String businessId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,27 +43,19 @@ public class AddProductActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        btnSaveProduct.setOnClickListener(v -> {
-            saveProduct();
-        });
+        businessId = getSharedPreferences("APP", MODE_PRIVATE)
+                .getString("businessId", null);
+
+        btnSaveProduct.setOnClickListener(v -> saveProduct());
     }
 
     private void saveProduct() {
 
-        String name =
-                etName.getText().toString().trim();
-
-        String category =
-                etCategory.getText().toString().trim();
-
-        String buyingPriceText =
-                etBuyingPrice.getText().toString().trim();
-
-        String sellingPriceText =
-                etSellingPrice.getText().toString().trim();
-
-        String stockText =
-                etStock.getText().toString().trim();
+        String name = etName.getText().toString().trim();
+        String category = etCategory.getText().toString().trim();
+        String buyingPriceText = etBuyingPrice.getText().toString().trim();
+        String sellingPriceText = etSellingPrice.getText().toString().trim();
+        String stockText = etStock.getText().toString().trim();
 
         if (name.isEmpty() ||
                 category.isEmpty() ||
@@ -71,32 +66,32 @@ public class AddProductActivity extends AppCompatActivity {
             Toast.makeText(this,
                     "Fill all fields",
                     Toast.LENGTH_SHORT).show();
-
             return;
         }
 
-        double buyingPrice =
-                Double.parseDouble(buyingPriceText);
+        if (businessId == null) {
+            Toast.makeText(this,
+                    "Business not found",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        double sellingPrice =
-                Double.parseDouble(sellingPriceText);
+        double buyingPrice = Double.parseDouble(buyingPriceText);
+        double sellingPrice = Double.parseDouble(sellingPriceText);
+        int stock = Integer.parseInt(stockText);
 
-        int stock =
-                Integer.parseInt(stockText);
+        Map<String, Object> product = new HashMap<>();
 
-        Map<String, Object> product =
-                new HashMap<>();
-
-        product.put("name", name);
+        product.put("productName", name);   // ONLY THIS
         product.put("category", category);
         product.put("buyingPrice", buyingPrice);
         product.put("sellingPrice", sellingPrice);
         product.put("stock", stock);
+        product.put("timestamp", System.currentTimeMillis());
 
-        product.put("timestamp",
-                System.currentTimeMillis());
-
-        db.collection("products")
+        db.collection("businesses")
+                .document(businessId)
+                .collection("products")
                 .add(product)
                 .addOnSuccessListener(documentReference -> {
 
@@ -106,12 +101,11 @@ public class AddProductActivity extends AppCompatActivity {
 
                     clearFields();
                 })
-                .addOnFailureListener(e -> {
-
-                    Toast.makeText(this,
-                            e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                e.getMessage(),
+                                Toast.LENGTH_LONG).show()
+                );
     }
 
     private void clearFields() {
@@ -122,4 +116,6 @@ public class AddProductActivity extends AppCompatActivity {
         etSellingPrice.setText("");
         etStock.setText("");
     }
+
+
 }

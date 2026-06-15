@@ -1,5 +1,6 @@
 package Activities;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -10,28 +11,35 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 
 import com.example.a10.R;
 
 import Adapter.ProductAdapter;
+import models.Cart;
+
+import java.util.ArrayList;
 
 public class DashboardActivity extends AppCompatActivity {
 
     TextView tvUsername, tvCartCount;
     ImageView settingsIcon;
 
-    CardView sales, product, report, expenses;
-    Button btnLogOut, btnLowStock;
+    View sales, product, report, expenses;
+
+    Button btnLogOut, btnLowStock, btnExpense;
+
+    LinearLayout cardCart;
 
     String role;
     String businessId;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
+        // INIT VIEWS
         tvUsername = findViewById(R.id.tvUsername);
         settingsIcon = findViewById(R.id.imgSettings);
 
@@ -42,18 +50,17 @@ public class DashboardActivity extends AppCompatActivity {
 
         btnLogOut = findViewById(R.id.btnLogout);
         btnLowStock = findViewById(R.id.btnLowStock);
+        btnExpense = findViewById(R.id.btnExpense);
 
         tvCartCount = findViewById(R.id.tvCartCount);
+        cardCart = findViewById(R.id.cardCart);
 
-        LinearLayout cardCart = findViewById(R.id.cardCart);
-
-        // ✅ FIX: get role properly
+        // DATA
         role = getIntent().getStringExtra("role");
         String username = getIntent().getStringExtra("username");
 
         tvUsername.setText(username != null ? username : "User");
 
-        // ✅ BUSINESS ID (important for Firestore system)
         businessId = getSharedPreferences("APP", MODE_PRIVATE)
                 .getString("businessId", null);
 
@@ -67,16 +74,17 @@ public class DashboardActivity extends AppCompatActivity {
             expenses.setVisibility(View.GONE);
         }
 
-        // NAVIGATION
+        // =========================
+        // CLICK EVENTS (ALL CARDS)
+        // =========================
+
         sales.setOnClickListener(v ->
                 startActivity(new Intent(this, SalesReportActivity.class))
         );
 
-        product.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ProductActivity.class);
-            intent.putExtra("role", role);
-            startActivity(intent);
-        });
+        product.setOnClickListener(v ->
+                startActivity(new Intent(this, ProductActivity.class))
+        );
 
         report.setOnClickListener(v ->
                 startActivity(new Intent(this, ReportActivity.class))
@@ -86,12 +94,12 @@ public class DashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(this, AddExpenseActivity.class))
         );
 
-        btnLowStock.setOnClickListener(v ->
-                startActivity(new Intent(this, LowStockActivity.class))
-        );
-
         cardCart.setOnClickListener(v ->
                 startActivity(new Intent(this, CartActivity.class))
+        );
+
+        btnLowStock.setOnClickListener(v ->
+                startActivity(new Intent(this, LowStockActivity.class))
         );
 
         btnLogOut.setOnClickListener(v -> {
@@ -102,6 +110,9 @@ public class DashboardActivity extends AppCompatActivity {
         settingsIcon.setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class))
         );
+        btnExpense.setOnClickListener(v ->{
+            startActivity(new Intent(this, ExpensesReport.class));
+        });
     }
 
     @Override
@@ -110,8 +121,17 @@ public class DashboardActivity extends AppCompatActivity {
         updateCartCount();
     }
 
+    // SAFE CART COUNT (NO CRASH)
     private void updateCartCount() {
-        int count = ProductAdapter.cartList.size();
-        tvCartCount.setText(String.valueOf(count));
+
+        ArrayList<Cart> cart;
+
+        if (ProductAdapter.cartList == null) {
+            cart = new ArrayList<>();
+        } else {
+            cart = ProductAdapter.cartList;
+        }
+
+        tvCartCount.setText(String.valueOf(cart.size()));
     }
 }

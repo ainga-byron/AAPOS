@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.a10.R;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class LoginActivity extends AppCompatActivity {
@@ -51,64 +50,54 @@ public class LoginActivity extends AppCompatActivity {
 
                     String uid = authResult.getUser().getUid();
 
-                    // STEP 1: FIND USER IN ALL BUSINESSES
-                    db.collectionGroup("users")
-                            .whereEqualTo("email", email)
+                    db.collection("businesses")
+                            .whereEqualTo("ownerUid", uid)
                             .get()
                             .addOnSuccessListener(snapshot -> {
 
                                 if (snapshot.isEmpty()) {
-                                    Toast.makeText(this,
-                                            "User not registered in any business",
-                                            Toast.LENGTH_LONG).show();
+
+                                    Toast.makeText(
+                                            LoginActivity.this,
+                                            "Business not found",
+                                            Toast.LENGTH_LONG
+                                    ).show();
+
                                     return;
                                 }
 
-                                DocumentSnapshot userDoc = snapshot.getDocuments().get(0);
+                                String businessId =
+                                        snapshot.getDocuments().get(0).getId();
 
-                                String role = userDoc.getString("role");
-                                String businessId = userDoc.getReference()
-                                        .getParent()
-                                        .getParent()
-                                        .getId();
+                                getSharedPreferences("APP", MODE_PRIVATE)
+                                        .edit()
+                                        .putString("businessId", businessId)
+                                        .putString("role", "admin")
+                                        .apply();
 
-                                saveSession(businessId, role);
+                                startActivity(
+                                        new Intent(
+                                                LoginActivity.this,
+                                                DashboardActivity.class
+                                        )
+                                );
 
-                                openDashboard(role);
-                            });
-
+                                finish();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(
+                                            LoginActivity.this,
+                                            e.getMessage(),
+                                            Toast.LENGTH_LONG
+                                    ).show()
+                            );
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                                LoginActivity.this,
+                                e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
                 );
-    }
-
-    private void saveSession(String businessId, String role) {
-        getSharedPreferences("APP", MODE_PRIVATE)
-                .edit()
-                .putString("businessId", businessId)
-                .putString("role", role)
-                .apply();
-    }
-
-    private void openDashboard(String role) {
-
-        if ("admin".equalsIgnoreCase(role)) {
-
-            startActivity(new Intent(this, AdminDashboardActivity.class));
-
-        } else if ("cashier".equalsIgnoreCase(role)) {
-
-            startActivity(new Intent(this, DashboardActivity.class));
-
-        } else {
-
-            Toast.makeText(this,
-                    "Unknown role: " + role,
-                    Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        finish();
     }
 }
