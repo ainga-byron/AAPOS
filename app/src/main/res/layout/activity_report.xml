@@ -60,21 +60,24 @@
                 android:id="@+id/btnDaily"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Daily"/>
+                android:text="Daily"
+                android:backgroundTint="#388E3C"/>
 
             <Button
                 android:id="@+id/btnWeekly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Weekly"
-                android:layout_marginStart="10dp"/>
+                android:layout_marginStart="10dp"
+                android:backgroundTint="#1976D2"/>
 
             <Button
                 android:id="@+id/btnMonthly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Monthly"
-                android:layout_marginStart="10dp"/>
+                android:layout_marginStart="10dp"
+                android:backgroundTint="#455A64"/>
         </LinearLayout>
 
     </LinearLayout>

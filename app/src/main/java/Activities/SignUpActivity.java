@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +22,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     TextInputEditText etEmail, etPassword, etBusinessName;
     Button btnSignUp;
+    TextView login;
 
     FirebaseAuth auth;
     FirebaseFirestore db;
@@ -37,9 +39,15 @@ public class SignUpActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        login = findViewById(R.id.tvLogin);
 
         btnSignUp.setOnClickListener(v -> registerUser());
+        login.setOnClickListener(v ->{
+            Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
+            startActivity(intent);
+        });
     }
+
 
     private void registerUser() {
 

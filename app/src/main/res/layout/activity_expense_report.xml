@@ -1,22 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#F5F6FA">
 
-    <TextView
-        android:id="@+id/tvTotalExpenses"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Total Expenses: KES 0"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:padding="10dp"/>
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerExpenses"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        <!-- HEADER CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:padding="16dp"
+            android:elevation="4dp"
+            android:orientation="vertical">
 
-</LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expense Report"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#222222"/>
+
+            <TextView
+                android:id="@+id/tvTotalExpenses"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total Expenses: KES 0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#D32F2F"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <!-- FILTER SECTION -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:weightSum="3">
+
+            <Button
+                android:id="@+id/btnDaily"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Daily"
+                android:backgroundTint="#1976D2"
+                android:textColor="@android:color/white"/>
+
+            <Button
+                android:id="@+id/btnWeekly"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Weekly"
+                android:layout_marginHorizontal="6dp"
+                android:backgroundTint="#455A64"
+                android:textColor="@android:color/white"/>
+
+            <Button
+                android:id="@+id/btnMonthly"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Monthly"
+                android:backgroundTint="#388E3C"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
+
+        <!-- LIST CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:elevation="4dp"
+            android:layout_marginTop="16dp"
+            android:padding="8dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerExpenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

@@ -33,10 +33,16 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     String businessId;
 
-    public ProductAdapter(Context context, ArrayList<Product> productList, String businessId) {
+    public ProductAdapter(Context context,
+                          ArrayList<Product> productList,
+                          String businessId) {
+
         this.context = context;
         this.productList = productList;
-        this.productListFull = productList; // IMPORTANT FIX
+
+        // FIX: Create a separate backup copy
+        this.productListFull = new ArrayList<>(productList);
+
         this.businessId = businessId;
 
         if (cartList == null) {
@@ -59,34 +65,52 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         Product product = productList.get(position);
 
-        // SAFE NAME FIX (prevents blank/unknown)
         holder.tvProductName.setText(
-                product.getProductName() != null && !product.getProductName().isEmpty()
+                product.getProductName() != null &&
+                        !product.getProductName().isEmpty()
                         ? product.getProductName()
                         : "Unknown Product"
         );
 
         holder.tvCategory.setText(
-                "Category: " + (product.getCategory() != null ? product.getCategory() : "-")
+                "Category: " +
+                        (product.getCategory() != null
+                                ? product.getCategory()
+                                : "-")
         );
 
-        holder.tvSellingPrice.setText("Selling: KES " + product.getSellingPrice());
+        holder.tvSellingPrice.setText(
+                "Selling: KES " +
+                        String.format(Locale.getDefault(),
+                                "%,.2f",
+                                product.getSellingPrice())
+        );
+        holder.tvBuyingPrice.setText(
+                "Buying: KES " +
+                        String.format(Locale.getDefault(),
+                                "%,.2f",
+                                product.getBuyingPrice())
+        );
+
         holder.tvStock.setText("Stock: " + product.getStock());
 
-        // =========================
         // ADD TO CART
-        // =========================
         holder.btnAddToCart.setOnClickListener(v -> {
 
             if (product.getProductId() == null) {
-                Toast.makeText(context, "Invalid product", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context,
+                        "Invalid product",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
 
             boolean exists = false;
 
             for (Cart item : cartList) {
-                if (item.getProductId().equals(product.getProductId())) {
+
+                if (item.getProductId()
+                        .equals(product.getProductId())) {
+
                     item.setQuantity(item.getQuantity() + 1);
                     exists = true;
                     break;
@@ -94,6 +118,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             }
 
             if (!exists) {
+
                 cartList.add(new Cart(
                         product.getProductId(),
                         product.getProductName(),
@@ -102,15 +127,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 ));
             }
 
-            Toast.makeText(context, "Added to cart", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context,
+                    "Added to cart",
+                    Toast.LENGTH_SHORT).show();
         });
 
-        // =========================
-        // EDIT BUTTON (POPUP)
-        // =========================
-        holder.btnEdit.setOnClickListener(v -> {
-            showEditDialog(product, holder.getAdapterPosition());
-        });
+        // EDIT
+        holder.btnEdit.setOnClickListener(v ->
+                showEditDialog(product, holder.getAdapterPosition()));
     }
 
     @Override
@@ -118,13 +142,67 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return productList.size();
     }
 
-    // =========================
-    // VIEW HOLDER
-    // =========================
+    // IMPORTANT FOR REALTIME FIRESTORE UPDATES
+    public void updateData(ArrayList<Product> newList) {
+
+        productList.clear();
+        productList.addAll(newList);
+
+        productListFull.clear();
+        productListFull.addAll(newList);
+
+        notifyDataSetChanged();
+    }
+
+    // SEARCH FILTER
+    public void filter(String text) {
+
+        ArrayList<Product> filteredList = new ArrayList<>();
+
+        if (text == null || text.trim().isEmpty()) {
+
+            filteredList.addAll(productListFull);
+
+        } else {
+
+            String query = text.toLowerCase(Locale.ROOT).trim();
+
+            for (Product product : productListFull) {
+
+                boolean matchName =
+                        product.getProductName() != null &&
+                                product.getProductName()
+                                        .toLowerCase(Locale.ROOT)
+                                        .contains(query);
+
+                boolean matchCategory =
+                        product.getCategory() != null &&
+                                product.getCategory()
+                                        .toLowerCase(Locale.ROOT)
+                                        .contains(query);
+
+                if (matchName || matchCategory) {
+                    filteredList.add(product);
+                }
+            }
+        }
+
+        productList.clear();
+        productList.addAll(filteredList);
+
+        notifyDataSetChanged();
+    }
+
     public static class ProductViewHolder extends RecyclerView.ViewHolder {
 
-        TextView tvProductName, tvCategory, tvSellingPrice, tvStock;
-        Button btnAddToCart, btnEdit;
+        TextView tvProductName;
+        TextView tvCategory;
+        TextView tvSellingPrice;
+        TextView tvStock;
+
+        Button btnAddToCart;
+        Button btnEdit;
+        TextView tvBuyingPrice;
 
         public ProductViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -136,12 +214,10 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             btnAddToCart = itemView.findViewById(R.id.btnAddToCart);
             btnEdit = itemView.findViewById(R.id.btnEdit);
+            tvBuyingPrice = itemView.findViewById(R.id.tvBuyingPrice);
         }
     }
 
-    // =========================
-    // EDIT POPUP
-    // =========================
     private void showEditDialog(Product product, int position) {
 
         View view = LayoutInflater.from(context)
@@ -152,9 +228,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         EditText etBuying = view.findViewById(R.id.etBuying);
         EditText etSelling = view.findViewById(R.id.etSelling);
         EditText etStock = view.findViewById(R.id.etStock);
+
         Button btnUpdate = view.findViewById(R.id.btnUpdate);
 
-        // PRE-FILL DATA
         etName.setText(product.getProductName());
         etCategory.setText(product.getCategory());
         etBuying.setText(String.valueOf(product.getBuyingPrice()));
@@ -169,68 +245,61 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         btnUpdate.setOnClickListener(v -> {
 
-            String name = etName.getText().toString().trim();
-            String category = etCategory.getText().toString().trim();
-            double buying = Double.parseDouble(etBuying.getText().toString().trim());
-            double selling = Double.parseDouble(etSelling.getText().toString().trim());
-            int stock = Integer.parseInt(etStock.getText().toString().trim());
+            try {
 
-            firestore.collection("businesses")
-                    .document(businessId)
-                    .collection("products")
-                    .document(product.getProductId())
-                    .update(
-                            "productName", name,
-                            "category", category,
-                            "buyingPrice", buying,
-                            "sellingPrice", selling,
-                            "stock", stock
-                    )
-                    .addOnSuccessListener(unused -> {
+                String name = etName.getText().toString().trim();
+                String category = etCategory.getText().toString().trim();
 
-                        product.setProductName(name);
-                        product.setCategory(category);
-                        product.setBuyingPrice(buying);
-                        product.setSellingPrice(selling);
-                        product.setStock(stock);
+                double buying =
+                        Double.parseDouble(
+                                etBuying.getText().toString().trim());
 
-                        notifyItemChanged(position);
+                double selling =
+                        Double.parseDouble(
+                                etSelling.getText().toString().trim());
 
-                        Toast.makeText(context, "Product Updated", Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show()
-                    );
-        });
-    }
+                int stock =
+                        Integer.parseInt(
+                                etStock.getText().toString().trim());
 
-    // =========================
-    // FILTER
-    // =========================
-    public void filter(String text) {
+                firestore.collection("businesses")
+                        .document(businessId)
+                        .collection("products")
+                        .document(product.getProductId())
+                        .update(
+                                "productName", name,
+                                "category", category,
+                                "buyingPrice", buying,
+                                "sellingPrice", selling,
+                                "stock", stock
+                        )
+                        .addOnSuccessListener(unused -> {
 
-        productList.clear();
+                            product.setProductName(name);
+                            product.setCategory(category);
+                            product.setBuyingPrice(buying);
+                            product.setSellingPrice(selling);
+                            product.setStock(stock);
 
-        if (text == null || text.trim().isEmpty()) {
-            productList.addAll(productListFull);
-        } else {
+                            notifyItemChanged(position);
 
-            String query = text.toLowerCase(Locale.ROOT).trim();
+                            Toast.makeText(context,
+                                    "Product Updated",
+                                    Toast.LENGTH_SHORT).show();
 
-            for (Product product : productListFull) {
+                            dialog.dismiss();
+                        })
+                        .addOnFailureListener(e ->
+                                Toast.makeText(context,
+                                        e.getMessage(),
+                                        Toast.LENGTH_SHORT).show());
 
-                if ((product.getProductName() != null &&
-                        product.getProductName().toLowerCase().contains(query))
-                        ||
-                        (product.getCategory() != null &&
-                                product.getCategory().toLowerCase().contains(query))) {
+            } catch (Exception e) {
 
-                    productList.add(product);
-                }
+                Toast.makeText(context,
+                        "Enter valid values",
+                        Toast.LENGTH_SHORT).show();
             }
-        }
-
-        notifyDataSetChanged();
+        });
     }
 }

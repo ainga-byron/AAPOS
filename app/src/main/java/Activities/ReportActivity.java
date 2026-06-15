@@ -24,16 +24,18 @@ public class ReportActivity extends AppCompatActivity {
 
     TextView tvSales, tvExpenses, tvProfit;
     Button btnDaily, btnWeekly, btnMonthly;
+    LineChart lineChart;
 
     FirebaseFirestore db;
-    LineChart lineChart;
 
     double totalSales = 0;
     double totalExpenses = 0;
 
-    long currentStartTime = 0;
+    long startTime = 0;
+    String businessId;
 
-    String businessId; // ✅ FIX HERE
+    boolean salesLoaded = false;
+    boolean expensesLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,44 +57,36 @@ public class ReportActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("APP", MODE_PRIVATE);
         businessId = prefs.getString("businessId", "");
 
-        if (businessId == null || businessId.isEmpty()) {
-            Toast.makeText(this, "Business ID missing", Toast.LENGTH_LONG).show();
+        if (businessId.isEmpty()) {
+            Toast.makeText(this, "Business ID missing", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        btnDaily.setOnClickListener(v -> applyFilter("daily"));
-        btnWeekly.setOnClickListener(v -> applyFilter("weekly"));
-        btnMonthly.setOnClickListener(v -> applyFilter("monthly"));
+        btnDaily.setOnClickListener(v -> loadReport(1));
+        btnWeekly.setOnClickListener(v -> loadReport(7));
+        btnMonthly.setOnClickListener(v -> loadReport(30));
 
-        applyFilter("daily");
+        loadReport(1);
     }
 
-    private void applyFilter(String type) {
+    private void loadReport(int days) {
 
         long now = System.currentTimeMillis();
+        startTime = now - (days * 24L * 60 * 60 * 1000);
 
-        switch (type) {
-            case "daily":
-                currentStartTime = now - (24L * 60 * 60 * 1000);
-                break;
-            case "weekly":
-                currentStartTime = now - (7L * 24 * 60 * 60 * 1000);
-                break;
-            case "monthly":
-                currentStartTime = now - (30L * 24 * 60 * 60 * 1000);
-                break;
-        }
+        salesLoaded = false;
+        expensesLoaded = false;
 
         loadSales();
         loadExpenses();
     }
 
+    // ================= SALES =================
     private void loadSales() {
 
         db.collection("businesses")
                 .document(businessId)
                 .collection("sales")
-                .whereGreaterThan("timestamp", currentStartTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
 
@@ -100,30 +94,25 @@ public class ReportActivity extends AppCompatActivity {
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-                        Object amountObj = doc.get("totalAmount");
+                        long ts = parseLong(doc.get("timestamp"));
+                        if (ts == 0 || ts < startTime) continue;
 
-                        double amount = 0;
-
-                        if (amountObj instanceof Long) {
-                            amount = ((Long) amountObj).doubleValue();
-                        } else if (amountObj instanceof Double) {
-                            amount = (Double) amountObj;
-                        }
-
-                        totalSales += amount;
+                        totalSales += parseDouble(doc.get("totalAmount"));
                     }
 
                     tvSales.setText("Sales: KES " + totalSales);
-                    updateUI();
+
+                    salesLoaded = true;
+                    checkUpdate();
                 });
     }
 
+    // ================= EXPENSES =================
     private void loadExpenses() {
 
         db.collection("businesses")
                 .document(businessId)
                 .collection("expenses")
-                .whereGreaterThan("timestamp", currentStartTime)
                 .get()
                 .addOnSuccessListener(snapshot -> {
 
@@ -131,22 +120,23 @@ public class ReportActivity extends AppCompatActivity {
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
-                        Object amountObj = doc.get("amount");
+                        long ts = parseLong(doc.get("timestamp"));
+                        if (ts == 0 || ts < startTime) continue;
 
-                        double amount = 0;
-
-                        if (amountObj instanceof Long) {
-                            amount = ((Long) amountObj).doubleValue();
-                        } else if (amountObj instanceof Double) {
-                            amount = (Double) amountObj;
-                        }
-
-                        totalExpenses += amount;
+                        totalExpenses += parseDouble(doc.get("amount"));
                     }
 
                     tvExpenses.setText("Expenses: KES " + totalExpenses);
-                    updateUI();
+
+                    expensesLoaded = true;
+                    checkUpdate();
                 });
+    }
+
+    private void checkUpdate() {
+        if (salesLoaded && expensesLoaded) {
+            updateUI();
+        }
     }
 
     private void updateUI() {
@@ -159,26 +149,58 @@ public class ReportActivity extends AppCompatActivity {
 
     private void drawChart() {
 
-        List<Entry> salesEntries = new ArrayList<>();
-        List<Entry> expenseEntries = new ArrayList<>();
-        List<Entry> profitEntries = new ArrayList<>();
+        List<Entry> entries = new ArrayList<>();
 
-        salesEntries.add(new Entry(0, (float) totalSales));
-        expenseEntries.add(new Entry(1, (float) totalExpenses));
-        profitEntries.add(new Entry(2, (float) (totalSales - totalExpenses)));
+        entries.add(new Entry(0, (float) totalSales));
+        entries.add(new Entry(1, (float) totalExpenses));
+        entries.add(new Entry(2, (float) (totalSales - totalExpenses)));
 
-        LineDataSet salesSet = new LineDataSet(salesEntries, "Sales");
-        salesSet.setColor(Color.GREEN);
+        LineDataSet set = new LineDataSet(entries, "Report");
+        set.setColor(Color.BLUE);
+        set.setCircleColor(Color.RED);
+        set.setLineWidth(2f);
+        set.setValueTextColor(Color.BLACK);
 
-        LineDataSet expenseSet = new LineDataSet(expenseEntries, "Expenses");
-        expenseSet.setColor(Color.RED);
-
-        LineDataSet profitSet = new LineDataSet(profitEntries, "Profit");
-        profitSet.setColor(Color.BLUE);
-
-        LineData data = new LineData(salesSet, expenseSet, profitSet);
+        LineData data = new LineData(set);
 
         lineChart.setData(data);
         lineChart.invalidate();
+    }
+
+    // ================= SAFE PARSERS =================
+    private double parseDouble(Object obj) {
+
+        if (obj == null) return 0;
+
+        if (obj instanceof Long) return ((Long) obj).doubleValue();
+        if (obj instanceof Double) return (Double) obj;
+
+        if (obj instanceof String) {
+            try {
+                return Double.parseDouble((String) obj);
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+
+        return 0;
+    }
+
+    private long parseLong(Object obj) {
+
+        if (obj == null) return 0;
+
+        if (obj instanceof Long) return (Long) obj;
+        if (obj instanceof Double) return ((Double) obj).longValue();
+
+        if (obj instanceof String) {
+            try {
+                return Long.parseLong((String) obj);
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+
+        return 0;
     }
 }

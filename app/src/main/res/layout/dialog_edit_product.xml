@@ -10,20 +10,20 @@
         android:id="@+id/etName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Product Name"/>
+        android:hint="@string/product_name"/>
 
     <EditText
         android:id="@+id/etCategory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Category"
+        android:hint="@string/category"
         />
 
     <EditText
         android:id="@+id/etBuying"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Buying Price"
+        android:hint="@string/buying_price"
         android:inputType="numberDecimal"/>
 
     <EditText

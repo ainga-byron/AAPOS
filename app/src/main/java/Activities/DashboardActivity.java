@@ -1,6 +1,6 @@
 package Activities;
 
-import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -33,7 +33,6 @@ public class DashboardActivity extends AppCompatActivity {
     String role;
     String businessId;
 
-    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,9 +56,6 @@ public class DashboardActivity extends AppCompatActivity {
 
         // DATA
         role = getIntent().getStringExtra("role");
-        String username = getIntent().getStringExtra("username");
-
-        tvUsername.setText(username != null ? username : "User");
 
         businessId = getSharedPreferences("APP", MODE_PRIVATE)
                 .getString("businessId", null);
@@ -74,10 +70,7 @@ public class DashboardActivity extends AppCompatActivity {
             expenses.setVisibility(View.GONE);
         }
 
-        // =========================
-        // CLICK EVENTS (ALL CARDS)
-        // =========================
-
+        // CLICK EVENTS
         sales.setOnClickListener(v ->
                 startActivity(new Intent(this, SalesReportActivity.class))
         );
@@ -110,18 +103,35 @@ public class DashboardActivity extends AppCompatActivity {
         settingsIcon.setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class))
         );
-        btnExpense.setOnClickListener(v ->{
-            startActivity(new Intent(this, ExpensesReport.class));
-        });
+
+        btnExpense.setOnClickListener(v ->
+                startActivity(new Intent(this, ExpenseReport.class))
+        );
+
+        // FIRST LOAD
+        loadUsername();
+        updateCartCount();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        updateCartCount();
+
+        loadUsername();   // 🔥 FIX: username updates after settings change
+        updateCartCount(); // keep cart fresh
     }
 
-    // SAFE CART COUNT (NO CRASH)
+    // 🔥 FIXED USERNAME LOADER
+    private void loadUsername() {
+
+        SharedPreferences prefs = getSharedPreferences("SETTINGS", MODE_PRIVATE);
+
+        String username = prefs.getString("username", "User");
+
+        tvUsername.setText(username);
+    }
+
+    // SAFE CART COUNT
     private void updateCartCount() {
 
         ArrayList<Cart> cart;

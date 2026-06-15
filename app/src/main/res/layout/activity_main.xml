@@ -42,6 +42,7 @@
         android:textSize="30sp"
         android:textColor="#CDA11C"
         android:layout_marginTop="320dp"
+        android:layout_marginStart="10dp"
         />
     <TextView
         android:layout_width="match_parent"
@@ -50,6 +51,7 @@
         android:textSize="20sp"
         android:textColor="@color/black"
         android:layout_marginTop="390dp"
+        android:layout_marginStart="10dp"
         />
     <Button
         android:id="@+id/btnLogin"
@@ -57,7 +59,8 @@
         android:layout_height="wrap_content"
         android:text="LOGIN"
         android:layout_marginTop="454dp"
-        android:layout_marginLeft="30dp"/>
+        android:layout_marginLeft="30dp"
+        />
     <Button
         android:id="@+id/btnSignUp"
         android:layout_width="350dp"
@@ -66,5 +69,17 @@
         android:layout_marginTop="504dp"
         android:layout_marginLeft="30dp"/>
 
+    <TextView
+        android:id="@+id/tvAASoftwares"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AAsoftwares"
+        android:textSize="18sp"
+        android:textColor="#673AB7"
+        android:layout_marginLeft="160dp"
+        android:layout_marginTop="648dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
 </RelativeLayout>

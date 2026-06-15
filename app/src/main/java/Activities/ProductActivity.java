@@ -100,53 +100,48 @@ public class ProductActivity extends AppCompatActivity {
                         return;
                     }
 
-                    productList.clear();
-
+                    ArrayList<Product> tempList = new ArrayList<>();
                     double totalStockWorth = 0;
 
                     for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
                         Product p = new Product();
-
                         p.setProductId(doc.getId());
 
-                        // ✅ SAFE PRODUCT NAME
                         String name = doc.getString("productName");
                         p.setProductName(name != null ? name : "Unknown");
 
-                        // CATEGORY
                         String category = doc.getString("category");
                         p.setCategory(category != null ? category : "Uncategorized");
 
-                        // STOCK SAFE PARSE
-                        int stock = 0;
-                        Object stockObj = doc.get("stock");
-                        if (stockObj instanceof Long) {
-                            stock = ((Long) stockObj).intValue();
-                        }
+                        int stock = doc.getLong("stock") != null
+                                ? doc.getLong("stock").intValue()
+                                : 0;
 
-                        // PRICE SAFE PARSE
-                        double price = 0;
-                        Object priceObj = doc.get("sellingPrice");
+                        double sellingPrice = doc.getDouble("sellingPrice") != null
+                                ? doc.getDouble("sellingPrice")
+                                : 0;
 
-                        if (priceObj instanceof Double) {
-                            price = (Double) priceObj;
-                        } else if (priceObj instanceof Long) {
-                            price = ((Long) priceObj).doubleValue();
-                        }
+                        double buyingPrice = doc.getDouble("buyingPrice") != null
+                                ? doc.getDouble("buyingPrice")
+                                : 0;
 
                         p.setStock(stock);
-                        p.setSellingPrice(price);
+                        p.setSellingPrice(sellingPrice);
+                        p.setBuyingPrice(buyingPrice);
 
-                        productList.add(p);
+                        tempList.add(p);
 
-                        totalStockWorth += (stock * price);
+                        totalStockWorth += stock * sellingPrice;
                     }
 
                     tvStockWorth.setText(
                             "Total Stock Worth: KES " +
                                     String.format(Locale.getDefault(), "%,.2f", totalStockWorth)
                     );
+
+                    productList.clear();
+                    productList.addAll(tempList);
 
                     if (adapter == null) {
 

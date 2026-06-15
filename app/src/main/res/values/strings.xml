@@ -13,4 +13,7 @@
     <string name="view_selected_products">View selected products</string>
     <string name="shopping_cart">Shopping Cart</string>
     <string name="sign_up1">SIGN UP</string>
+    <string name="product_name">Product Name</string>
+    <string name="category">Category</string>
+    <string name="buying_price">Buying Price</string>
 </resources>
